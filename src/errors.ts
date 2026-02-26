@@ -1,26 +1,29 @@
-// ─── StorageError discriminated union ─────────────────────────────────────────────────────────
-// Pure constructors — no classes, no throws, no side effects.
+import type { ReadonlyDeep } from 'type-fest'
+
+// ─── StorageError discriminated union ────────────────────────────────────────────────────────
+// ReadonlyDeep replaces manual Readonly<{...}> per field — recursively freezes
+// nested structures (e.g. Date, arrays, cause objects) at the type level.
 // Consumers narrow via the `_tag` discriminant.
 
-export type ValidationError = Readonly<{
+export type ValidationError = ReadonlyDeep<{
   _tag: 'ValidationError'
   message: string
-  issues: ReadonlyArray<string>
+  issues: string[]
 }>
 
-export type DbError = Readonly<{
+export type DbError = ReadonlyDeep<{
   _tag: 'DbError'
   message: string
   cause?: unknown
 }>
 
-export type NotFoundError = Readonly<{
+export type NotFoundError = ReadonlyDeep<{
   _tag: 'NotFoundError'
   message: string
   id: number
 }>
 
-export type TtlExpiredError = Readonly<{
+export type TtlExpiredError = ReadonlyDeep<{
   _tag: 'TtlExpiredError'
   message: string
   expiredAt: Date
@@ -28,11 +31,10 @@ export type TtlExpiredError = Readonly<{
 
 export type StorageError = ValidationError | DbError | NotFoundError | TtlExpiredError
 
-// ─── Pure constructors ──────────────────────────────────────────────────────────────────────
+// ─── Pure constructors ───────────────────────────────────────────────────────────────────
+// No classes, no throws, no side effects.
 
-export const mkValidationError = (
-  issues: ReadonlyArray<string>
-): ValidationError => ({
+export const mkValidationError = (issues: readonly string[]): ValidationError => ({
   _tag: 'ValidationError',
   message: `Validation failed: ${issues.join(', ')}`,
   issues
