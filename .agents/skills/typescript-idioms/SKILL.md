@@ -16,7 +16,7 @@ description: "Guidelines for writing TypeScript in sqlite3-crud-fp: const-only, 
 - **NO** `as Type` assertions unless bridging a poorly-typed external library (comment why).
 - **NO** non-null assertions (`!`). Handle `null`/`undefined` explicitly.
 - **NO** `void`-returning functions. Every function must return a value.
-- **NO** `try/catch` in business logic. Use `ResultAsync` from neverthrow.
+- **NO** `try/catch` in business logic. Use `ResultAsync` from result.
 - **NO** `throw`. Return `errAsync(mkDbError(...))` instead.
 - **NO** mutation of returned rows. All outputs are `ReadonlyDeep<T>`.
 - **NO** `interface`. Use `type` aliases exclusively.
@@ -27,7 +27,7 @@ description: "Guidelines for writing TypeScript in sqlite3-crud-fp: const-only, 
 - `ReadonlyDeep<T>` (type-fest) on all row types, error types, and store interfaces.
 - `ValueOf<T>` (type-fest) when extracting dynamic property values from a typed record.
 - Define types via `z.infer<typeof Schema>` — Zod schema is the source of truth.
-- Use `errAsync` / `okAsync` from neverthrow for direct short-circuits.
+- Use `errAsync` / `okAsync` from result for direct short-circuits.
 - Arrow functions for all exported functions — no `function` keyword.
 - `.andThen()` / `.map()` / `.mapErr()` to compose pipelines — never unwrap mid-chain with `.isOk()`.
 

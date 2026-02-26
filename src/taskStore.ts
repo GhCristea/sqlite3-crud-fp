@@ -5,7 +5,7 @@ import { tasks, TaskInsertSchema, TaskSelectSchema } from './schema.js'
 import type { TaskRow } from './schema.js'
 
 export const createTaskStore = (db: ReadonlyDeep<LibSQLDatabase>) => {
-  const crud = createCrud<typeof tasks, typeof TaskInsertSchema, typeof TaskSelectSchema, TaskRow>(
+  const crud = createCrud<typeof tasks, typeof TaskInsertSchema, typeof TaskSelectSchema>(
     db,
     tasks,
     tasks.id,

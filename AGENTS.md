@@ -8,7 +8,7 @@ A minimal, functional, append-only CRUD facade for Drizzle ORM with SQLite3 — 
 - **Package manager**: npm
 - **Database**: SQLite3 via `@libsql/client` + `drizzle-orm`
 - **Validation**: `drizzle-zod` + `zod` — schema is the single source of truth
-- **Error handling**: `neverthrow` — `ResultAsync<T, StorageError>` everywhere
+- **Error handling**: `ResultAsync<T, StorageError>` everywhere
 - **Immutability**: `type-fest` `ReadonlyDeep<T>` on all returned types
 - **Validation gate**: `npm run typecheck && npm run lint && npm run test`
 
@@ -16,7 +16,7 @@ A minimal, functional, append-only CRUD facade for Drizzle ORM with SQLite3 — 
 
 This library enforces a strict functional programming paradigm. **You must follow these at all times:**
 
-1. **`neverthrow`**: ALL async operations that can fail return `ResultAsync<T, StorageError>`. No `try/catch` in business logic. No `throw`.
+1. **`ResultAsync`**: ALL async operations that can fail return `ResultAsync<T, StorageError>`. No `try/catch` in business logic. No `throw`.
 2. **`ReadonlyDeep`** (type-fest): ALL row types and error types are `ReadonlyDeep<T>`. No mutable outputs.
 3. **`const`-only**: No `let`. No variable reassignment. Every function must return a value — no void side-effectful functions.
 4. **`zod` + `drizzle-zod`**: All insert inputs are `unknown` at the boundary, validated via inferred Zod schemas before touching the DB.
@@ -29,7 +29,7 @@ When working on a specific domain, load the matching skill from `.agents/skills/
 - **Drizzle ORM patterns** (table definitions, query builder, migrations) → `drizzle-orm`
 - **TypeScript safety** (no `any`, `ReadonlyDeep`, `const`-only, Result types) → `typescript-idioms`
 - **Runtime boundaries** (Zod parsing at all I/O edges) → `zod-validation`
-- **Error handling** (neverthrow ResultAsync pipelines, discriminated unions) → `neverthrow-fp`
+- **Error handling** (ResultAsync pipelines, discriminated unions) → `result-fp`
 - **Testing** (Vitest conventions, in-memory SQLite) → `vitest-testing`
 
 ## Principles
