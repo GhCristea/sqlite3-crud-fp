@@ -1,0 +1,54 @@
+{
+  "name": "sqlite3-crud-fp",
+  "version": "0.1.0",
+  "description": "Functional, type-safe, append-only CRUD facade for Drizzle SQLite3 — local-first, immutable, ESM-only",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "keywords": ["drizzle", "sqlite", "crud", "functional", "typescript", "local-first", "neverthrow", "immutable"],
+  "author": "Gheorghita Cristea",
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24.10.1",
+    "@vitest/coverage-v8": "^4.0.18",
+    "drizzle-kit": "^0.28.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-functional": "^6.2.0",
+    "eslint-plugin-unused-imports": "^4.4.1",
+    "globals": "^17.3.0",
+    "prettier": "^3.8.1",
+    "tsx": "^4.21.0",
+    "type-fest": "^4.0.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.48.0",
+    "vitest": "^4.0.18"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "drizzle-orm": "^0.38.0",
+    "drizzle-zod": "^0.7.0",
+    "neverthrow": "^8.2.0",
+    "zod": "^4.3.6"
+  }
+}
