@@ -1,8 +1,7 @@
 import type { ReadonlyDeep } from 'type-fest'
 import type { LibSQLDatabase } from 'drizzle-orm/libsql'
 import { createCrud } from './crud.js'
-import { tasks, TaskInsertSchema, TaskSelectSchema } from './schema.js'
-import type { TaskRow } from './schema.js'
+import { tasks, TaskInsertSchema, TaskSelectSchema, type TaskRow } from './schema.js'
 
 export const createTaskStore = (db: ReadonlyDeep<LibSQLDatabase>) => {
   const crud = createCrud<typeof tasks, typeof TaskInsertSchema, typeof TaskSelectSchema, TaskRow>(
