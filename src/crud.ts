@@ -1,17 +1,10 @@
 import { eq } from 'drizzle-orm'
-import { errAsync, okAsync, ResultAsync } from 'neverthrow'
+import { z } from 'zod'
 import type { SQLiteTable, SQLiteColumn } from 'drizzle-orm/sqlite-core'
 import type { LibSQLDatabase } from 'drizzle-orm/libsql'
-import { z } from 'zod'
-import {
-  mkDbError,
-  mkNotFoundError,
-  mkValidationError,
-  mkTtlExpiredError,
-  mkDbValidationError,
-  isStorageError
-} from './errors.js'
 import type { ReadonlyDeep } from 'type-fest'
+import { fromPromise, flatMapAsync, errAsync, okAsync } from './result'
+import { mkDbError, mkNotFoundError, mkValidationError, mkTtlExpiredError, mkDbValidationError } from './errors'
 
 export type TtlConfig<TRow> =
   | { readonly type: 'fixed'; readonly ms: number }
@@ -41,23 +34,22 @@ const computeExpiredAt = <TRow>(row: TRow, ttl: TtlConfig<TRow>, timestampColumn
 export const createCrud = <
   TTable extends SQLiteTable,
   TInsert extends z.ZodType<TTable['$inferInsert']>,
-  TSelect extends z.ZodType<TTable['$inferSelect']>,
-  TRow extends Record<string, unknown>
+  TSelect extends z.ZodType<TTable['$inferSelect']>
 >(
   db: ReadonlyDeep<LibSQLDatabase>,
   table: TTable,
   idColumn: ReadonlyDeep<SQLiteColumn>,
   insertSchema: TInsert,
   selectSchema: TSelect,
-  options: CrudOptions<TRow> = {}
+  { ttl, timestampColumn }: CrudOptions<TTable['_']['columns']> = {}
 ) => {
-  const tsCol = (options.timestampColumn ?? 'createdAt') as keyof TRow
+  const tsCol = timestampColumn ?? 'createdAt'
 
   const append = (data: unknown) => {
     const parsed = insertSchema.safeParse(data)
     if (!parsed.success) return errAsync(mkValidationError(parsed.error.issues.map(i => i.message)))
 
-    return ResultAsync.fromPromise(
+    return fromPromise(
       db
         .insert(table)
         .values(parsed.data)
@@ -67,73 +59,47 @@ export const createCrud = <
     )
   }
 
-  const readOne = (id: number) =>
-    ResultAsync.fromPromise(
-      db
-        .select()
-        .from(table)
-        .where(eq(idColumn, id))
-        .limit(1)
-        .then(rows => {
-          if (rows.length === 0) return Promise.reject(mkNotFoundError(id))
+  const readOne = (id: number) => {
+    const query = fromPromise(db.select().from(table).where(eq(idColumn, id)).limit(1), err =>
+      mkDbError('Read failed', err)
+    )
 
-          const parsed = selectSchema.safeParse(rows[0])
-          if (!parsed.success) {
-            return Promise.reject(mkDbValidationError(parsed.error.issues.map(i => i.message)))
-          }
+    return flatMapAsync(query, rows => {
+      if (rows.length === 0) return errAsync(mkNotFoundError(id))
 
-          return parsed.data as TRow
-        }),
-      err => {
-        return isStorageError(err) ? err : mkDbError('Read failed', err)
-      }
-    ).andThen(row => {
-      if (options.ttl && checkTtl(row, options.ttl, tsCol)) {
-        return errAsync(mkTtlExpiredError(computeExpiredAt(row, options.ttl, tsCol)))
-      }
-      return okAsync(row)
+      const parsed = selectSchema.safeParse(rows[0])
+      if (!parsed.success) return errAsync(mkDbValidationError(parsed.error.issues.map(i => i.message)))
+
+      if (ttl && checkTtl(parsed.data, ttl, tsCol))
+        return errAsync(mkTtlExpiredError(computeExpiredAt(parsed.data, ttl, tsCol)))
+
+      return okAsync(parsed.data)
     })
+  }
 
-  const readMany = (_?: void) =>
-    ResultAsync.fromPromise(
-      db
-        .select()
-        .from(table)
-        .then(rows => {
-          const parsed = z.array(selectSchema).safeParse(rows)
-          if (!parsed.success) {
-            return Promise.reject(mkDbValidationError(parsed.error.issues.map(i => i.message)))
-          }
+  const readMany = (_?: void) => {
+    const query = fromPromise(db.select().from(table), err => mkDbError('Read failed', err))
 
-          const typedRows = parsed.data as ReadonlyArray<TRow>
-          if (!options.ttl) return typedRows
-          return typedRows.filter(row => !checkTtl(row, options.ttl!, tsCol))
-        }),
-      err => {
-        return isStorageError(err) ? err : mkDbError('Read failed', err)
-      }
+    return flatMapAsync(query, rows => {
+      const parsed = z.array(selectSchema).safeParse(rows)
+      if (!parsed.success) return errAsync(mkDbValidationError(parsed.error.issues.map(i => i.message)))
+
+      return okAsync(ttl ? parsed.data.filter(r => !checkTtl(r, ttl, tsCol)) : parsed.data)
+    })
+  }
+
+  const readManyBy = <TCol extends SQLiteColumn>(column: TCol, value: ReadonlyDeep<TCol['_']['data']>) => {
+    const query = fromPromise(db.select().from(table).where(eq(column, value)), err =>
+      mkDbError('Read by column failed', err)
     )
 
-  const readManyBy = <TCol extends SQLiteColumn>(column: TCol, value: ReadonlyDeep<TCol['_']['data']>) =>
-    ResultAsync.fromPromise(
-      db
-        .select()
-        .from(table)
-        .where(eq(column, value))
-        .then(rows => {
-          const parsed = z.array(selectSchema).safeParse(rows)
-          if (!parsed.success) {
-            return Promise.reject(mkDbValidationError(parsed.error.issues.map(i => i.message)))
-          }
+    return flatMapAsync(query, rows => {
+      const parsed = z.array(selectSchema).safeParse(rows)
+      if (!parsed.success) return errAsync(mkDbValidationError(parsed.error.issues.map(i => i.message)))
 
-          const typedRows = parsed.data as ReadonlyArray<TRow>
-          if (!options.ttl) return typedRows
-          return typedRows.filter(row => !checkTtl(row, options.ttl!, tsCol))
-        }),
-      err => {
-        return isStorageError(err) ? err : mkDbError('Read by column failed', err)
-      }
-    )
+      return okAsync(ttl ? parsed.data.filter(r => !checkTtl(r, ttl, tsCol)) : parsed.data)
+    })
+  }
 
   return { append, readOne, readMany, readManyBy } as const
 }

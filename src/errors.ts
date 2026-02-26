@@ -22,7 +22,7 @@ export type TtlExpiredError = {
 
 export type StorageError = ValidationError | DbError | DbValidationError | NotFoundError | TtlExpiredError
 
-export const mkValidationError = (issues: readonly string[]): ValidationError => ({
+export const mkValidationError = (issues: readonly string[]): StorageError => ({
   _tag: 'ValidationError',
   message: `Validation failed: ${issues.join(', ')}`,
   issues
@@ -30,19 +30,19 @@ export const mkValidationError = (issues: readonly string[]): ValidationError =>
 
 export const mkDbError = (message: string, cause?: unknown): DbError => ({ _tag: 'DbError', message, cause })
 
-export const mkDbValidationError = (issues: readonly string[]): DbValidationError => ({
+export const mkDbValidationError = (issues: readonly string[]): StorageError => ({
   _tag: 'DbValidationError',
   message: `Database record failed schema validation: ${issues.join(', ')}`,
   issues
 })
 
-export const mkNotFoundError = (id: number): NotFoundError => ({
+export const mkNotFoundError = (id: number): StorageError => ({
   _tag: 'NotFoundError',
   message: `Record with id ${id} not found`,
   id
 })
 
-export const mkTtlExpiredError = (expiredAt: Readonly<Date>): TtlExpiredError => ({
+export const mkTtlExpiredError = (expiredAt: Readonly<Date>): StorageError => ({
   _tag: 'TtlExpiredError',
   message: `Record TTL expired at ${expiredAt.toISOString()}`,
   expiredAt
