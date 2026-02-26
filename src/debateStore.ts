@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm'
+import type { ReadonlyDeep } from 'type-fest'
 import type { LibSQLDatabase } from 'drizzle-orm/libsql'
 import { ResultAsync } from 'neverthrow'
 import { createCrud } from './crud.js'
@@ -7,14 +8,14 @@ import type { DebateRoundRow, DebateRoundInsert } from './schema.js'
 import type { StorageError } from './errors.js'
 import { mkDbError } from './errors.js'
 
-// ─── debateStore ──────────────────────────────────────────────────────────────
-// Thin wrapper over createCrud.
-// readAllRounds optionally filters by taskId via Drizzle eq().
+// ─── DebateStore ─────────────────────────────────────────────────────────────────────────
+// ReadonlyDeep on all return types — rows frozen at every nesting depth.
+// readAllRounds filters by taskId when provided — both branches return explicitly.
 
-export type DebateStore = Readonly<{
-  appendRound:   (data: unknown)    => ResultAsync<Readonly<DebateRoundRow>, StorageError>
-  readRound:     (id: number)       => ResultAsync<Readonly<DebateRoundRow>, StorageError>
-  readAllRounds: (taskId?: number)  => ResultAsync<ReadonlyArray<Readonly<DebateRoundRow>>, StorageError>
+export type DebateStore = ReadonlyDeep<{
+  appendRound:   (data: unknown)   => ResultAsync<DebateRoundRow, StorageError>
+  readRound:     (id: number)      => ResultAsync<DebateRoundRow, StorageError>
+  readAllRounds: (taskId?: number) => ResultAsync<ReadonlyArray<DebateRoundRow>, StorageError>
 }>
 
 export const createDebateStore = (db: LibSQLDatabase): DebateStore => {
@@ -22,13 +23,13 @@ export const createDebateStore = (db: LibSQLDatabase): DebateStore => {
     timestampColumn: 'createdAt'
   })
 
-  const readAllRounds = (taskId?: number): ResultAsync<ReadonlyArray<Readonly<DebateRoundRow>>, StorageError> => {
-    if (taskId === undefined) return crud.readMany()
-    return ResultAsync.fromPromise(
-      db.select().from(debateRounds).where(eq(debateRounds.taskId, taskId)),
-      err => mkDbError(`Read by taskId (${taskId}) failed`, err)
-    )
-  }
+  const readAllRounds = (taskId?: number): ResultAsync<ReadonlyArray<DebateRoundRow>, StorageError> =>
+    taskId === undefined
+      ? crud.readMany()
+      : ResultAsync.fromPromise(
+          db.select().from(debateRounds).where(eq(debateRounds.taskId, taskId)),
+          err => mkDbError(`Read by taskId (${taskId}) failed`, err)
+        )
 
   return {
     appendRound:   crud.append,
