@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm'
 import type { LibSQLDatabase } from 'drizzle-orm/libsql'
 import { ResultAsync } from 'neverthrow'
 import { createCrud } from './crud.js'
@@ -6,13 +7,14 @@ import type { DebateRoundRow, DebateRoundInsert } from './schema.js'
 import type { StorageError } from './errors.js'
 import { mkDbError } from './errors.js'
 
-// ─── debateStore ──────────────────────────────────────────────────────────────────────────
-// Thin wrapper with an appendRound convenience that pre-stamps createdAt.
+// ─── debateStore ──────────────────────────────────────────────────────────────
+// Thin wrapper over createCrud.
+// readAllRounds optionally filters by taskId via Drizzle eq().
 
 export type DebateStore = Readonly<{
-  appendRound:  (data: unknown) => ResultAsync<Readonly<DebateRoundRow>, StorageError>
-  readRound:    (id: number)    => ResultAsync<Readonly<DebateRoundRow>, StorageError>
-  readAllRounds: (taskId?: number) => ResultAsync<ReadonlyArray<Readonly<DebateRoundRow>>, StorageError>
+  appendRound:   (data: unknown)    => ResultAsync<Readonly<DebateRoundRow>, StorageError>
+  readRound:     (id: number)       => ResultAsync<Readonly<DebateRoundRow>, StorageError>
+  readAllRounds: (taskId?: number)  => ResultAsync<ReadonlyArray<Readonly<DebateRoundRow>>, StorageError>
 }>
 
 export const createDebateStore = (db: LibSQLDatabase): DebateStore => {
@@ -23,12 +25,8 @@ export const createDebateStore = (db: LibSQLDatabase): DebateStore => {
   const readAllRounds = (taskId?: number): ResultAsync<ReadonlyArray<Readonly<DebateRoundRow>>, StorageError> => {
     if (taskId === undefined) return crud.readMany()
     return ResultAsync.fromPromise(
-      db.select().from(debateRounds).where(
-        (debateRounds.taskId as unknown as { equals: (v: number) => unknown }).equals
-          ? undefined as never
-          : undefined as never
-      ).then(() => [] as DebateRoundRow[]),
-      err => mkDbError('Read by taskId failed', err)
+      db.select().from(debateRounds).where(eq(debateRounds.taskId, taskId)),
+      err => mkDbError(`Read by taskId (${taskId}) failed`, err)
     )
   }
 
