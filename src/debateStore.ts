@@ -1,16 +1,7 @@
 import type { LibSQLDatabase } from 'drizzle-orm/libsql'
-import type { ResultAsync } from 'neverthrow'
 import { createCrud } from './crud.js'
-import { debateRounds, DebateRoundInsertSchema, DebateRoundSelectSchema } from './schema.js'
-import type { DebateRoundRow } from './schema.js'
-import type { StorageError } from './errors.js'
+import { debateRounds, DebateRoundInsertSchema, DebateRoundSelectSchema, type DebateRoundRow } from './schema.js'
 import type { ReadonlyDeep } from 'type-fest'
-
-export type DebateStore = {
-  readonly appendRound: (data: unknown) => ResultAsync<DebateRoundRow, StorageError>
-  readonly readRound: (id: number) => ResultAsync<DebateRoundRow, StorageError>
-  readonly readAllRounds: (taskId?: number) => ResultAsync<DebateRoundRow, StorageError>
-}
 
 export const createDebateStore = (db: ReadonlyDeep<LibSQLDatabase>) => {
   const crud = createCrud(db, debateRounds, debateRounds.id, DebateRoundInsertSchema, DebateRoundSelectSchema, {

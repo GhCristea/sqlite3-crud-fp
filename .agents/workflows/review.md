@@ -22,7 +22,7 @@ npm run test:coverage
 Evaluate changes against core principles:
 
 1. **Immutability**: Any mutable output? `let` bindings? Missing `ReadonlyDeep`? Load `typescript-idioms` skill.
-2. **Result Audit**: Any `throw` in business logic? Any `try/catch` outside of `ResultAsync.fromPromise`? Load `neverthrow-fp` skill.
+2. **Result Audit**: Any `throw` in business logic?
 3. **Append-only**: Any `update` or `delete` operations introduced?
 4. **YAGNI**: Any abstraction added speculatively? Any export not used anywhere?
 5. **Zod Boundaries**: Any `unknown` input reaching the DB without parsing? Load `zod-validation` skill.

@@ -11,7 +11,9 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest --run",
@@ -24,7 +26,16 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
   },
-  "keywords": ["drizzle", "sqlite", "crud", "functional", "typescript", "local-first", "neverthrow", "immutable"],
+  "keywords": [
+    "drizzle",
+    "sqlite",
+    "crud",
+    "functional",
+    "typescript",
+    "local-first",
+    "effect",
+    "immutable"
+  ],
   "author": "Gheorghita Cristea",
   "license": "MIT",
   "devDependencies": {
@@ -48,7 +59,7 @@
     "@libsql/client": "^0.14.0",
     "drizzle-orm": "^0.38.0",
     "drizzle-zod": "^0.7.0",
-    "neverthrow": "^8.2.0",
+    "effect": "^3.15.0",
     "zod": "^4.3.6"
   }
 }

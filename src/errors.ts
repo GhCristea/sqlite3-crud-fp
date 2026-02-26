@@ -1,62 +1,42 @@
-export type ValidationError = {
-  readonly _tag: 'ValidationError'
-  readonly message: string
+/* eslint-disable functional/no-classes */
+import { Data } from 'effect'
+
+export class ValidationError extends Data.TaggedError('ValidationError')<{ readonly issues: readonly string[] }> {
+  readonly message = `Validation failed: ${this.issues.join(', ')}`
+}
+
+export class DbError extends Data.TaggedError('DbError')<{ readonly message: string; readonly cause?: unknown }> {}
+
+export class DbValidationError extends Data.TaggedError('DbValidationError')<{
   readonly issues: readonly string[]
+}> {
+  readonly message = `Database record failed schema validation: ${this.issues.join(', ')}`
 }
 
-export type DbError = { readonly _tag: 'DbError'; readonly message: string; readonly cause?: unknown }
-
-export type DbValidationError = {
-  readonly _tag: 'DbValidationError'
-  readonly message: string
-  readonly issues: readonly string[]
+export class NotFoundError extends Data.TaggedError('NotFoundError')<{ readonly id: number }> {
+  readonly message = `Record with id ${this.id} not found`
 }
 
-export type NotFoundError = { readonly _tag: 'NotFoundError'; readonly message: string; readonly id: number }
-
-export type TtlExpiredError = {
-  readonly _tag: 'TtlExpiredError'
-  readonly message: string
-  readonly expiredAt: Date
+export class TtlExpiredError extends Data.TaggedError('TtlExpiredError')<{ readonly expiredAt: Date }> {
+  readonly message = `Record TTL expired at ${this.expiredAt.toISOString()}`
 }
 
+export const mkValidationError = (issues: readonly string[]): ValidationError => new ValidationError({ issues })
+
+export const mkDbError = (message: string, cause?: unknown): DbError => new DbError({ message, cause })
+
+export const mkDbValidationError = (issues: readonly string[]): DbValidationError =>
+  new DbValidationError({ issues })
+
+export const mkNotFoundError = (id: number): NotFoundError => new NotFoundError({ id })
+
+export const mkTtlExpiredError = (expiredAt: Readonly<Date>): TtlExpiredError =>
+  new TtlExpiredError({ expiredAt: expiredAt as Date })
 export type StorageError = ValidationError | DbError | DbValidationError | NotFoundError | TtlExpiredError
 
-export const mkValidationError = (issues: readonly string[]): ValidationError => ({
-  _tag: 'ValidationError',
-  message: `Validation failed: ${issues.join(', ')}`,
-  issues
-})
-
-export const mkDbError = (message: string, cause?: unknown): DbError => ({ _tag: 'DbError', message, cause })
-
-export const mkDbValidationError = (issues: readonly string[]): DbValidationError => ({
-  _tag: 'DbValidationError',
-  message: `Database record failed schema validation: ${issues.join(', ')}`,
-  issues
-})
-
-export const mkNotFoundError = (id: number): NotFoundError => ({
-  _tag: 'NotFoundError',
-  message: `Record with id ${id} not found`,
-  id
-})
-
-export const mkTtlExpiredError = (expiredAt: Readonly<Date>): TtlExpiredError => ({
-  _tag: 'TtlExpiredError',
-  message: `Record TTL expired at ${expiredAt.toISOString()}`,
-  expiredAt
-})
-
-export const isStorageError = (e: unknown): e is StorageError => {
-  return (
-    typeof e === 'object' &&
-    e !== null &&
-    '_tag' in e &&
-    (e._tag === 'ValidationError' ||
-      e._tag === 'DbError' ||
-      e._tag === 'DbValidationError' ||
-      e._tag === 'NotFoundError' ||
-      e._tag === 'TtlExpiredError')
-  )
-}
+export const isStorageError = (e: unknown): e is StorageError =>
+  e instanceof ValidationError ||
+  e instanceof DbError ||
+  e instanceof DbValidationError ||
+  e instanceof NotFoundError ||
+  e instanceof TtlExpiredError

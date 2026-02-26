@@ -21,8 +21,7 @@ description: "Test-Driven Development workflow for the sqlite3-crud-fp facade."
 
 1. Run `npm run typecheck` and `npm run lint`.
 2. Review against `typescript-idioms` skill: `const`-only, no `let`, explicit returns.
-3. Review against `neverthrow-fp` skill: no mid-chain `.isOk()` guards.
-4. Re-run tests after refactoring.
+3. Re-run tests after refactoring.
 
 ## Phase 4: Output
 
