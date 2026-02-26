@@ -1,12 +1,13 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema } from 'drizzle-zod'
+import type { ReadonlyDeep } from 'type-fest'
 import { z } from 'zod'
 
-// ─── Branded column types ──────────────────────────────────────────────────────────────────
+// ─── Branded column types ───────────────────────────────────────────────────────────────────
 // SQLite has no native enums; .$type<T>() brands the column at the TS layer only.
 
-type TaskStatus     = 'pending' | 'debating' | 'completed' | 'archived'
-type AgentType      = 'claw' | 'counter_agent'
+type TaskStatus      = 'pending' | 'debating' | 'completed' | 'archived'
+type AgentType       = 'claw' | 'counter_agent'
 type DebateRoundType = 'draft' | 'critique' | 'synthesis'
 
 // ─── Tables ────────────────────────────────────────────────────────────────────────────
@@ -29,14 +30,15 @@ export const debateRounds = sqliteTable('debate_rounds', {
 })
 
 // ─── Immutable row types ──────────────────────────────────────────────────────────────
-// Readonly<> ensures selected rows cannot be mutated after fetch.
+// ReadonlyDeep recurses into nested structures (e.g. Date fields like createdAt)
+// preventing mutations at any depth after a row is fetched.
 
-export type TaskRow        = Readonly<typeof tasks.$inferSelect>
-export type DebateRoundRow = Readonly<typeof debateRounds.$inferSelect>
+export type TaskRow        = ReadonlyDeep<typeof tasks.$inferSelect>
+export type DebateRoundRow = ReadonlyDeep<typeof debateRounds.$inferSelect>
 
-// ─── Insert schemas (drizzle-zod) ──────────────────────────────────────────────────────
+// ─── Insert schemas (drizzle-zod) ─────────────────────────────────────────────────────
 // Inferred from Drizzle schema via drizzle-zod — single source of truth.
-// Left mutable intentionally: callers build insert objects before passing them in.
+// Left mutable intentionally: callers construct insert objects before passing in.
 
 export const TaskInsertSchema = createInsertSchema(tasks, {
   title:       z.string().min(1),
